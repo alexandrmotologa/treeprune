@@ -8,6 +8,8 @@ import {
   FileCode,
   PackageX,
   Sparkles,
+  MessageSquareOff,
+  Layers,
 } from "lucide-react";
 import { usePruneAnalysis } from "./hooks/usePruneAnalysis.js";
 import { DeadWeightMetrics } from "./components/DeadWeightMetrics.js";
@@ -16,6 +18,8 @@ import { ZombieRouteList } from "./components/ZombieRouteList.js";
 import { DeadItemList } from "./components/DeadItemList.js";
 import { UnusedDepsList } from "./components/UnusedDepsList.js";
 import { AIResidueList } from "./components/AIResidueList.js";
+import { CommentedCodeList } from "./components/CommentedCodeList.js";
+import { RedundantTypesList } from "./components/RedundantTypesList.js";
 import { PrunePreviewModal } from "./components/PrunePreviewModal.js";
 
 export function App() {
@@ -31,7 +35,7 @@ export function App() {
   } = usePruneAnalysis();
 
   const [activeTab, setActiveTab] = useState<
-    "graph" | "zombies" | "dead" | "deps" | "ai"
+    "graph" | "zombies" | "dead" | "deps" | "ai" | "comments" | "types"
   >("graph");
 
   const [isPruneModalOpen, setIsPruneModalOpen] = useState(false);
@@ -129,11 +133,11 @@ export function App() {
         )}
 
         {/* Navigation Tabs */}
-        <div className="border-b border-border/80 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="border-b border-border/80 flex items-center justify-between overflow-x-auto">
+          <div className="flex items-center gap-1 min-w-max">
             <button
               onClick={() => setActiveTab("graph")}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 transition-all ${
                 activeTab === "graph"
                   ? "border-cyan-400 text-cyan-400 font-semibold"
                   : "border-transparent text-slate-400 hover:text-slate-200"
@@ -150,7 +154,7 @@ export function App() {
 
             <button
               onClick={() => setActiveTab("zombies")}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 transition-all ${
                 activeTab === "zombies"
                   ? "border-purple-400 text-purple-400 font-semibold"
                   : "border-transparent text-slate-400 hover:text-slate-200"
@@ -167,14 +171,14 @@ export function App() {
 
             <button
               onClick={() => setActiveTab("dead")}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 transition-all ${
                 activeTab === "dead"
                   ? "border-rose-400 text-rose-400 font-semibold"
                   : "border-transparent text-slate-400 hover:text-slate-200"
               }`}
             >
               <FileCode className="w-4 h-4" />
-              Dead Files & Exports
+              Dead Code & Exports
               {report && (
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 font-mono">
                   {report.deadFiles.length + report.deadExports.length}
@@ -184,7 +188,7 @@ export function App() {
 
             <button
               onClick={() => setActiveTab("deps")}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 transition-all ${
                 activeTab === "deps"
                   ? "border-blue-400 text-blue-400 font-semibold"
                   : "border-transparent text-slate-400 hover:text-slate-200"
@@ -201,17 +205,51 @@ export function App() {
 
             <button
               onClick={() => setActiveTab("ai")}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 transition-all ${
                 activeTab === "ai"
                   ? "border-emerald-400 text-emerald-400 font-semibold"
                   : "border-transparent text-slate-400 hover:text-slate-200"
               }`}
             >
               <Sparkles className="w-4 h-4" />
-              AI Residue
+              Duplicate Clones
               {report && (
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">
                   {report.aiDuplicates.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("comments")}
+              className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 transition-all ${
+                activeTab === "comments"
+                  ? "border-amber-400 text-amber-400 font-semibold"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <MessageSquareOff className="w-4 h-4" />
+              Commented Code
+              {report && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-mono">
+                  {report.commentedCode?.length || 0}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("types")}
+              className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 transition-all ${
+                activeTab === "types"
+                  ? "border-teal-400 text-teal-400 font-semibold"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              Redundant Types
+              {report && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-teal-500/20 text-teal-300 font-mono">
+                  {report.redundantTypes?.length || 0}
                 </span>
               )}
             </button>
@@ -225,6 +263,7 @@ export function App() {
               <ReachabilityGraph
                 nodes={report.nodes}
                 edges={report.edges}
+                projectRoot={report.projectRoot}
                 onSelectNode={(node) => {
                   if (!node.reachable && node.kind !== "file") {
                     handleOpenDiff(node.filePath, node.symbolName);
@@ -234,7 +273,10 @@ export function App() {
             )}
 
             {activeTab === "zombies" && (
-              <ZombieRouteList routes={report.zombieRoutes} />
+              <ZombieRouteList
+                routes={report.zombieRoutes}
+                projectRoot={report.projectRoot}
+              />
             )}
 
             {activeTab === "dead" && (
@@ -242,6 +284,7 @@ export function App() {
                 deadFiles={report.deadFiles}
                 deadExports={report.deadExports}
                 selectedIds={selectedNodeIds}
+                projectRoot={report.projectRoot}
                 onToggleSelect={toggleNodeSelection}
                 onSelectAll={selectAll}
                 onPreviewDiff={handleOpenDiff}
@@ -253,7 +296,24 @@ export function App() {
             )}
 
             {activeTab === "ai" && (
-              <AIResidueList clusters={report.aiDuplicates} />
+              <AIResidueList
+                clusters={report.aiDuplicates}
+                projectRoot={report.projectRoot}
+              />
+            )}
+
+            {activeTab === "comments" && (
+              <CommentedCodeList
+                blocks={report.commentedCode || []}
+                projectRoot={report.projectRoot}
+              />
+            )}
+
+            {activeTab === "types" && (
+              <RedundantTypesList
+                clusters={report.redundantTypes || []}
+                projectRoot={report.projectRoot}
+              />
             )}
           </div>
         ) : (

@@ -64,6 +64,24 @@ export interface AnalysisSummary {
     deadLines: number;
     wastedPercentage: number;
 }
+export interface CommentedCodeBlock {
+    id: string;
+    filePath: string;
+    startLine: number;
+    endLine: number;
+    lineCount: number;
+    snippet: string;
+}
+export interface RedundantTypeCluster {
+    name: string;
+    kind: "interface" | "type";
+    instances: Array<{
+        id: string;
+        filePath: string;
+        line: number;
+        isExported: boolean;
+    }>;
+}
 export interface FullAnalysisReport {
     timestamp: string;
     projectRoot: string;
@@ -75,4 +93,6 @@ export interface FullAnalysisReport {
     zombieRoutes: ZombieRoute[];
     unusedDependencies: UnusedDependency[];
     aiDuplicates: AIDuplicateCluster[];
+    commentedCode: CommentedCodeBlock[];
+    redundantTypes: RedundantTypeCluster[];
 }

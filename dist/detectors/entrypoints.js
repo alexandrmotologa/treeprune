@@ -2,7 +2,20 @@ import fs from "node:fs/promises";
 import path from "node:path";
 export async function detectRootEntrypoints(projectRoot, parsedFiles, options = {}) {
     const rootNodeIds = new Set();
-    // 1. Ingest package.json to identify library roots and CLI bins
+    // 1. Ingest custom roots from configuration
+    if (options.customRoots && options.customRoots.length > 0) {
+        for (const cr of options.customRoots) {
+            const normCr = normalizePath(cr);
+            rootNodeIds.add(normCr);
+            for (const file of parsedFiles) {
+                if (file.filePath === normCr || file.filePath.endsWith(normCr)) {
+                    rootNodeIds.add(file.filePath);
+                    file.symbols.forEach((s) => rootNodeIds.add(s.id));
+                }
+            }
+        }
+    }
+    // 2. Ingest package.json to identify library roots and CLI bins
     let pkgJson = null;
     try {
         const pkgPath = path.join(projectRoot, "package.json");

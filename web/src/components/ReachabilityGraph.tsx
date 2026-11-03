@@ -1,10 +1,12 @@
 import React, { useRef, useEffect, useState, useMemo } from "react";
 import { GraphNode, GraphEdge } from "../types.js";
-import { ZoomIn, ZoomOut, RotateCcw, Filter } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Filter, Search, Download, ExternalLink, Code } from "lucide-react";
+import { getEditorLink } from "../utils/editor.js";
 
 interface Props {
   nodes: GraphNode[];
   edges: GraphEdge[];
+  projectRoot: string;
   onSelectNode?: (node: GraphNode) => void;
 }
 
@@ -16,12 +18,15 @@ interface Point {
 interface CanvasNode extends GraphNode {
   x: number;
   y: number;
-  vx: number;
-  vy: number;
   radius: number;
 }
 
-export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode }) => {
+export const ReachabilityGraph: React.FC<Props> = ({
+  nodes,
+  edges,
+  projectRoot,
+  onSelectNode,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
@@ -32,13 +37,10 @@ export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode 
   const [filterMode, setFilterMode] = useState<"all" | "dead" | "reachable">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Position nodes into clusters: Roots on left, Reachable in center, Dead on right
   const canvasNodes = useMemo(() => {
     const list: CanvasNode[] = [];
-    const width = 1200;
     const height = 800;
 
-    // Filter nodes if needed
     const filtered = nodes.filter((n) => {
       if (filterMode === "dead") return !n.reachable;
       if (filterMode === "reachable") return n.reachable;
@@ -49,20 +51,16 @@ export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode 
     const reachableNonRoots = filtered.filter((n) => n.reachable && !n.isRoot);
     const deadNodes = filtered.filter((n) => !n.reachable);
 
-    // Layout Roots (Col 1)
     rootNodes.forEach((n, idx) => {
       const step = height / (rootNodes.length + 1);
       list.push({
         ...n,
         x: 150 + (idx % 2) * 50,
         y: step * (idx + 1) + (Math.random() - 0.5) * 30,
-        vx: 0,
-        vy: 0,
         radius: n.kind === "file" ? 8 : 6,
       });
     });
 
-    // Layout Reachable (Col 2-3)
     reachableNonRoots.forEach((n, idx) => {
       const cols = 3;
       const col = idx % cols;
@@ -72,13 +70,10 @@ export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode 
         ...n,
         x: 350 + col * 120 + (Math.random() - 0.5) * 40,
         y: (row + 1) * Math.max(rowHeight, 40) + (Math.random() - 0.5) * 20,
-        vx: 0,
-        vy: 0,
         radius: n.kind === "file" ? 7 : 5,
       });
     });
 
-    // Layout Dead Island (Col 4-5)
     deadNodes.forEach((n, idx) => {
       const cols = 4;
       const col = idx % cols;
@@ -88,8 +83,6 @@ export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode 
         ...n,
         x: 750 + col * 100 + (Math.random() - 0.5) * 40,
         y: (row + 1) * Math.max(rowHeight, 35) + (Math.random() - 0.5) * 20,
-        vx: 0,
-        vy: 0,
         radius: n.kind === "file" ? 7 : 5,
       });
     });
@@ -97,12 +90,34 @@ export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode 
     return list;
   }, [nodes, filterMode]);
 
-  // Fast node ID lookup
   const nodeMap = useMemo(() => {
     const map = new Map<string, CanvasNode>();
     canvasNodes.forEach((n) => map.set(n.id, n));
     return map;
   }, [canvasNodes]);
+
+  // Center camera on a specific node
+  const focusNode = (target: CanvasNode) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const targetZoom = 1.3;
+    setZoom(targetZoom);
+    setOffset({
+      x: canvas.width / 2 - target.x * targetZoom,
+      y: canvas.height / 2 - target.y * targetZoom,
+    });
+    setSelectedNode(target);
+    if (onSelectNode) onSelectNode(target);
+  };
+
+  // Search filter matches
+  const searchMatches = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return canvasNodes
+      .filter((n) => n.symbolName.toLowerCase().includes(q) || n.filePath.toLowerCase().includes(q))
+      .slice(0, 5);
+  }, [canvasNodes, searchQuery]);
 
   // Render loop
   useEffect(() => {
@@ -111,104 +126,102 @@ export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let animId: number;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(offset.x, offset.y);
+    ctx.scale(zoom, zoom);
 
-      ctx.save();
-      ctx.translate(offset.x, offset.y);
-      ctx.scale(zoom, zoom);
+    // Cluster background zones
+    ctx.fillStyle = "rgba(6, 182, 212, 0.03)";
+    ctx.fillRect(80, 40, 220, canvas.height - 80);
+    ctx.fillStyle = "rgba(16, 185, 129, 0.02)";
+    ctx.fillRect(320, 40, 380, canvas.height - 80);
+    ctx.fillStyle = "rgba(244, 63, 94, 0.03)";
+    ctx.fillRect(720, 40, 420, canvas.height - 80);
 
-      // Draw cluster background zones
-      ctx.fillStyle = "rgba(6, 182, 212, 0.03)";
-      ctx.fillRect(80, 40, 220, canvas.height - 80);
-      ctx.fillStyle = "rgba(16, 185, 129, 0.02)";
-      ctx.fillRect(320, 40, 380, canvas.height - 80);
-      ctx.fillStyle = "rgba(244, 63, 94, 0.03)";
-      ctx.fillRect(720, 40, 420, canvas.height - 80);
+    // Headers
+    ctx.font = "bold 13px 'Plus Jakarta Sans', sans-serif";
+    ctx.fillStyle = "#06b6d4";
+    ctx.fillText("ENTRYPOINT ROOTS", 100, 30);
+    ctx.fillStyle = "#10b981";
+    ctx.fillText("REACHABLE CALL GRAPH", 340, 30);
+    ctx.fillStyle = "#f43f5e";
+    ctx.fillText("THE DEAD ISLAND (ORPHANS)", 740, 30);
 
-      // Draw cluster headers
-      ctx.font = "bold 13px 'Plus Jakarta Sans', sans-serif";
-      ctx.fillStyle = "#06b6d4";
-      ctx.fillText("ENTRYPOINT ROOTS", 100, 30);
-      ctx.fillStyle = "#10b981";
-      ctx.fillText("REACHABLE CALL GRAPH", 340, 30);
-      ctx.fillStyle = "#f43f5e";
-      ctx.fillText("THE DEAD ISLAND (ORPHANS)", 740, 30);
+    // Edges
+    for (const edge of edges) {
+      const from = nodeMap.get(edge.from);
+      const to = nodeMap.get(edge.to);
+      if (!from || !to) continue;
 
-      // Draw Edges
-      for (const edge of edges) {
-        const from = nodeMap.get(edge.from);
-        const to = nodeMap.get(edge.to);
-        if (!from || !to) continue;
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
 
-        ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        ctx.lineTo(to.x, to.y);
+      const isHighlighted =
+        hoveredNode?.id === from.id ||
+        hoveredNode?.id === to.id ||
+        selectedNode?.id === from.id ||
+        selectedNode?.id === to.id;
 
-        const isHighlighted =
-          hoveredNode?.id === from.id ||
-          hoveredNode?.id === to.id ||
-          selectedNode?.id === from.id ||
-          selectedNode?.id === to.id;
+      if (isHighlighted) {
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 1.5;
+      } else if (!from.reachable || !to.reachable) {
+        ctx.strokeStyle = "rgba(244, 63, 94, 0.15)";
+        ctx.lineWidth = 0.8;
+      } else {
+        ctx.strokeStyle = "rgba(16, 185, 129, 0.2)";
+        ctx.lineWidth = 0.8;
+      }
+      ctx.stroke();
+    }
 
-        if (isHighlighted) {
-          ctx.strokeStyle = "#38bdf8";
-          ctx.lineWidth = 1.5;
-        } else if (!from.reachable || !to.reachable) {
-          ctx.strokeStyle = "rgba(244, 63, 94, 0.15)";
-          ctx.lineWidth = 0.8;
-        } else {
-          ctx.strokeStyle = "rgba(16, 185, 129, 0.2)";
-          ctx.lineWidth = 0.8;
-        }
+    // Nodes
+    const isSearching = searchQuery.trim().length > 0;
+    const lowerQuery = searchQuery.toLowerCase();
+
+    for (const node of canvasNodes) {
+      const isSearchMatch =
+        isSearching &&
+        (node.symbolName.toLowerCase().includes(lowerQuery) ||
+          node.filePath.toLowerCase().includes(lowerQuery));
+
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+
+      let fill = "#64748b";
+      if (node.isRoot) {
+        fill = "#06b6d4";
+      } else if (node.kind === "route") {
+        fill = "#a855f7";
+      } else if (!node.reachable) {
+        fill = "#f43f5e";
+      } else {
+        fill = "#10b981";
+      }
+
+      ctx.fillStyle = fill;
+      ctx.fill();
+
+      if (node.id === selectedNode?.id || node.id === hoveredNode?.id || isSearchMatch) {
+        ctx.lineWidth = isSearchMatch ? 4 : 3;
+        ctx.strokeStyle = isSearchMatch ? "#fbbf24" : "#ffffff";
         ctx.stroke();
       }
 
-      // Draw Nodes
-      for (const node of canvasNodes) {
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-
-        // Color node by state
-        let fill = "#64748b";
-        if (node.isRoot) {
-          fill = "#06b6d4"; // Cyan
-        } else if (node.kind === "route") {
-          fill = "#a855f7"; // Purple
-        } else if (!node.reachable) {
-          fill = "#f43f5e"; // Rose
-        } else {
-          fill = "#10b981"; // Emerald
-        }
-
-        ctx.fillStyle = fill;
-        ctx.fill();
-
-        // Selected / Hovered ring
-        if (node.id === selectedNode?.id || node.id === hoveredNode?.id) {
-          ctx.lineWidth = 3;
-          ctx.strokeStyle = "#ffffff";
-          ctx.stroke();
-        }
-
-        // Node label if zoom is sufficient or hovered
-        if (zoom > 0.8 || node.id === hoveredNode?.id || node.id === selectedNode?.id) {
-          ctx.font = "10px 'JetBrains Mono', monospace";
-          ctx.fillStyle = node.reachable ? "#94a3b8" : "#fca5a5";
-          const label = node.symbolName || node.filePath.split("/").pop() || "";
-          ctx.fillText(label, node.x + node.radius + 4, node.y + 3);
-        }
+      if (zoom > 0.8 || node.id === hoveredNode?.id || node.id === selectedNode?.id || isSearchMatch) {
+        ctx.font = isSearchMatch ? "bold 11px 'JetBrains Mono', monospace" : "10px 'JetBrains Mono', monospace";
+        ctx.fillStyle = isSearchMatch ? "#fbbf24" : node.reachable ? "#94a3b8" : "#fca5a5";
+        const label = node.symbolName || node.filePath.split("/").pop() || "";
+        ctx.fillText(label, node.x + node.radius + 4, node.y + 3);
       }
+    }
 
-      ctx.restore();
-    };
+    ctx.restore();
+  }, [canvasNodes, edges, offset, zoom, hoveredNode, selectedNode, nodeMap, searchQuery]);
 
-    render();
-  }, [canvasNodes, edges, offset, zoom, hoveredNode, selectedNode, nodeMap]);
-
-  // Mouse interaction handlers
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDragging(true);
     setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
@@ -229,7 +242,6 @@ export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode 
       return;
     }
 
-    // Check hit test for hover
     let found: CanvasNode | null = null;
     for (const node of canvasNodes) {
       const dist = Math.hypot(node.x - mouseX, node.y - mouseY);
@@ -241,9 +253,7 @@ export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode 
     setHoveredNode(found);
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+  const handleMouseUp = () => setIsDragging(false);
 
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -275,43 +285,103 @@ export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode 
     setSelectedNode(null);
   };
 
+  const downloadGraphPng = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const link = document.createElement("a");
+    link.download = `treeprune-reachability-graph-${Date.now()}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
   return (
     <div className="relative w-full h-[650px] bg-slate-950/80 border border-border/80 rounded-xl overflow-hidden flex flex-col">
       {/* Top Toolbar */}
       <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
-        {/* Filters */}
-        <div className="flex items-center gap-2 pointer-events-auto bg-surface/90 border border-border/80 backdrop-blur rounded-lg p-1.5 shadow-md">
-          <Filter className="w-4 h-4 text-slate-400 ml-1" />
-          <button
-            onClick={() => setFilterMode("all")}
-            className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
-              filterMode === "all" ? "bg-cyan-500/20 text-cyan-300" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            All ({nodes.length})
-          </button>
-          <button
-            onClick={() => setFilterMode("dead")}
-            className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
-              filterMode === "dead" ? "bg-rose-500/20 text-rose-300" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Dead Only ({nodes.filter((n) => !n.reachable).length})
-          </button>
-          <button
-            onClick={() => setFilterMode("reachable")}
-            className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
-              filterMode === "reachable"
-                ? "bg-emerald-500/20 text-emerald-300"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Reachable ({nodes.filter((n) => n.reachable).length})
-          </button>
+        {/* Left: Filters and Search */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <div className="flex items-center gap-2 bg-surface/90 border border-border/80 backdrop-blur rounded-lg p-1.5 shadow-md">
+            <Filter className="w-4 h-4 text-slate-400 ml-1" />
+            <button
+              onClick={() => setFilterMode("all")}
+              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+                filterMode === "all" ? "bg-cyan-500/20 text-cyan-300" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              All ({nodes.length})
+            </button>
+            <button
+              onClick={() => setFilterMode("dead")}
+              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+                filterMode === "dead" ? "bg-rose-500/20 text-rose-300" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Dead Only ({nodes.filter((n) => !n.reachable).length})
+            </button>
+            <button
+              onClick={() => setFilterMode("reachable")}
+              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+                filterMode === "reachable"
+                  ? "bg-emerald-500/20 text-emerald-300"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Reachable ({nodes.filter((n) => n.reachable).length})
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative bg-surface/90 border border-border/80 backdrop-blur rounded-lg shadow-md">
+            <div className="flex items-center px-2.5 py-1">
+              <Search className="w-3.5 h-3.5 text-slate-400 mr-2" />
+              <input
+                type="text"
+                placeholder="Search symbol / file..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-36 font-mono"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="text-slate-500 hover:text-slate-300 text-xs ml-1"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Quick search dropdown */}
+            {searchMatches.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border rounded-lg shadow-xl overflow-hidden z-30">
+                {searchMatches.map((match) => (
+                  <button
+                    key={match.id}
+                    onClick={() => {
+                      focusNode(match);
+                      setSearchQuery("");
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs font-mono hover:bg-slate-800 transition-colors flex items-center justify-between"
+                  >
+                    <span className="truncate text-slate-200">
+                      {match.symbolName || match.filePath}
+                    </span>
+                    <span
+                      className={`text-[10px] uppercase font-bold ml-2 ${
+                        match.reachable ? "text-emerald-400" : "text-rose-400"
+                      }`}
+                    >
+                      {match.reachable ? "live" : "dead"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Zoom & View Controls */}
-        <div className="flex items-center gap-1 pointer-events-auto bg-surface/90 border border-border/80 backdrop-blur rounded-lg p-1 shadow-md">
+        {/* Right: Zoom & Export Controls */}
+        <div className="flex items-center gap-1.5 pointer-events-auto bg-surface/90 border border-border/80 backdrop-blur rounded-lg p-1 shadow-md">
           <button
             onClick={() => setZoom((z) => Math.min(z * 1.2, 3))}
             className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
@@ -332,6 +402,13 @@ export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode 
             title="Reset View"
           >
             <RotateCcw className="w-4 h-4" />
+          </button>
+          <button
+            onClick={downloadGraphPng}
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
+            title="Download Graph Image (PNG)"
+          >
+            <Download className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -418,6 +495,26 @@ export const ReachabilityGraph: React.FC<Props> = ({ nodes, edges, onSelectNode 
                 </ul>
               </div>
             )}
+
+            {/* Quick Open in IDE buttons */}
+            <div className="mt-3 pt-3 border-t border-border/40 flex items-center gap-2">
+              <a
+                href={getEditorLink(projectRoot, selectedNode.filePath, selectedNode.loc.start.line, "cursor")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-[11px] font-mono border border-border transition-colors"
+                title="Open directly in Cursor at this line"
+              >
+                <Code className="w-3.5 h-3.5 text-cyan-400" />
+                Cursor
+              </a>
+              <a
+                href={getEditorLink(projectRoot, selectedNode.filePath, selectedNode.loc.start.line, "vscode")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-[11px] font-mono border border-border transition-colors"
+                title="Open directly in VS Code at this line"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+                VS Code
+              </a>
+            </div>
           </div>
         </div>
       )}

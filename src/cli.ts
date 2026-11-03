@@ -8,6 +8,7 @@ import { TreePruneEngine } from "./engine.js";
 import { formatTableReport, formatJsonReport, formatSarifReport } from "./reporter/index.js";
 import { startServer } from "./server/index.js";
 import { listSnapshots, restoreSnapshot } from "./pruner/backup.js";
+import { generateGitHubWorkflow } from "./cli/init_ci.js";
 
 const program = new Command();
 
@@ -93,6 +94,7 @@ program
   .option("-b, --branch <branch>", "Git branch for cleanup commit", "treeprune/cleanup-dead-code")
   .option("--dry-run", "Preview changes without modifying files", false)
   .option("--no-backup", "Skip creating a rollback snapshot")
+  .option("--verify-types, --verify-build", "Verify project compiles before committing", false)
   .action(async (directory, options) => {
     const projectRoot = path.resolve(directory || process.cwd());
     const engine = new TreePruneEngine();
@@ -123,6 +125,7 @@ program
         branchName: options.branch,
         dryRun: options.dryRun,
         createBackup: options.backup,
+        verifyBuild: Boolean(options.verifyTypes || options.verifyBuild),
       });
 
       if (result.dryRun) {
@@ -214,6 +217,23 @@ program
       );
     } catch (err: any) {
       console.error(pc.red(`\n✖ Rollback failed: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+// 5. INIT-CI COMMAND
+program
+  .command("init-ci [directory]")
+  .description("Generate GitHub Actions automated dead code and zombie route audit workflow")
+  .action(async (directory) => {
+    const projectRoot = path.resolve(directory || process.cwd());
+    try {
+      const workflowPath = await generateGitHubWorkflow(projectRoot);
+      console.log(pc.green(`\n✔ GitHub Actions workflow generated at:`));
+      console.log(pc.cyan(`  ${workflowPath}`));
+      console.log(pc.dim("\nCommit this workflow file to automatically audit PRs and upload SARIF security annotations."));
+    } catch (err: any) {
+      console.error(pc.red(`\n✖ Failed to generate workflow: ${err.message}`));
       process.exit(1);
     }
   });

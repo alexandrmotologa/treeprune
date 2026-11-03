@@ -9,5 +9,6 @@ export interface PackageJsonConfig {
 }
 export interface RootDetectionOptions {
     includeTests?: boolean;
+    customRoots?: string[];
 }
 export declare function detectRootEntrypoints(projectRoot: string, parsedFiles: ParsedFile[], options?: RootDetectionOptions): Promise<Set<string>>;

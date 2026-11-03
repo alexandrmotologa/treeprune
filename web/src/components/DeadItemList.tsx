@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { GraphNode } from "../types.js";
-import { FileCode, AlertCircle, CheckSquare, Square, Eye } from "lucide-react";
+import { FileCode, AlertCircle, CheckSquare, Square, Eye, Code } from "lucide-react";
+import { getEditorLink } from "../utils/editor.js";
 
 interface Props {
   deadFiles: string[];
   deadExports: GraphNode[];
   selectedIds: Set<string>;
+  projectRoot: string;
   onToggleSelect: (id: string) => void;
   onSelectAll: (select: boolean) => void;
   onPreviewDiff: (filePath: string, symbolName?: string) => void;
@@ -15,6 +17,7 @@ export const DeadItemList: React.FC<Props> = ({
   deadFiles,
   deadExports,
   selectedIds,
+  projectRoot,
   onToggleSelect,
   onSelectAll,
   onPreviewDiff,
@@ -171,6 +174,13 @@ export const DeadItemList: React.FC<Props> = ({
                     <span className="text-slate-400 text-[11px] font-mono">
                       {(exp.byteSize / 1024).toFixed(1)} KB ({exp.lineCount} lines)
                     </span>
+                    <a
+                      href={getEditorLink(projectRoot, exp.filePath, exp.loc.start.line, "cursor")}
+                      className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                      title="Open in Cursor"
+                    >
+                      <Code className="w-3.5 h-3.5 text-cyan-400" />
+                    </a>
                     <button
                       onClick={() => onPreviewDiff(exp.filePath, exp.symbolName)}
                       className="flex items-center gap-1.5 px-2.5 py-1 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-border rounded-lg transition-colors"

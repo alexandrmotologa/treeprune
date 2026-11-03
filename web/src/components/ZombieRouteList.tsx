@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { ZombieRoute } from "../types.js";
-import { Skull, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Skull, AlertTriangle, ShieldCheck, Code } from "lucide-react";
+import { getEditorLink } from "../utils/editor.js";
 
 interface Props {
   routes: ZombieRoute[];
+  projectRoot: string;
 }
 
-export const ZombieRouteList: React.FC<Props> = ({ routes }) => {
+export const ZombieRouteList: React.FC<Props> = ({ routes, projectRoot }) => {
   const [methodFilter, setMethodFilter] = useState<string>("ALL");
 
   const filteredRoutes = routes.filter((r) => {
@@ -107,7 +109,16 @@ export const ZombieRouteList: React.FC<Props> = ({ routes }) => {
                   </span>
                 </td>
                 <td className="py-3 px-4 font-mono text-slate-400">
-                  {route.filePath}:{route.line}
+                  <div className="flex items-center gap-1.5">
+                    <span>{route.filePath}:{route.line}</span>
+                    <a
+                      href={getEditorLink(projectRoot, route.filePath, route.line, "cursor")}
+                      className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                      title="Open in Cursor"
+                    >
+                      <Code className="w-3.5 h-3.5 text-cyan-400" />
+                    </a>
+                  </div>
                 </td>
                 <td className="py-3 px-4 text-right">
                   <span className="inline-flex items-center gap-1 text-rose-400 font-medium">

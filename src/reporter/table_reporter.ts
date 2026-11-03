@@ -85,10 +85,39 @@ export function formatTableReport(report: FullAnalysisReport): string {
   }
 
   // AI Residue
-  if (aiDuplicates.length > 0) {
+  if (aiDuplicates && aiDuplicates.length > 0) {
     lines.push(pc.bold(pc.green(`AI Residue & Duplicate Helpers (${aiDuplicates.length}):`)));
     for (const cluster of aiDuplicates) {
       lines.push(`  ${pc.green("🤖")} Identical function ${pc.bold(cluster.name)}:`);
+      for (const inst of cluster.instances) {
+        lines.push(pc.dim(`     - ${inst.filePath}:${inst.line}`));
+      }
+    }
+    lines.push("");
+  }
+
+  // Commented-out Dead Code Blocks
+  const commentedCode = report.commentedCode || [];
+  if (commentedCode.length > 0) {
+    lines.push(pc.bold(pc.gray(`Commented-out Code Blocks (${commentedCode.length}):`)));
+    for (const block of commentedCode.slice(0, 10)) {
+      lines.push(
+        `  ${pc.gray("💬")} ${pc.dim(block.filePath + ":")}${pc.bold(`${block.startLine}-${block.endLine}`)} ` +
+        pc.dim(`(${block.lineCount} commented lines)`)
+      );
+    }
+    if (commentedCode.length > 10) {
+      lines.push(pc.dim(`  ... and ${commentedCode.length - 10} more commented blocks`));
+    }
+    lines.push("");
+  }
+
+  // Redundant Types
+  const redundantTypes = report.redundantTypes || [];
+  if (redundantTypes.length > 0) {
+    lines.push(pc.bold(pc.cyan(`Redundant Type Declarations (${redundantTypes.length}):`)));
+    for (const cluster of redundantTypes.slice(0, 8)) {
+      lines.push(`  ${pc.cyan("🗂")} Duplicate ${cluster.kind} ${pc.bold(cluster.name)} across ${cluster.instances.length} files:`);
       for (const inst of cluster.instances) {
         lines.push(pc.dim(`     - ${inst.filePath}:${inst.line}`));
       }

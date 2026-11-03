@@ -62,7 +62,8 @@ export async function parseSourceFile(
 
 export async function discoverAndParseFiles(
   targetDir: string,
-  onProgress?: (current: number, total: number, file: string) => void
+  onProgress?: (current: number, total: number, file: string) => void,
+  customIgnore?: string[]
 ): Promise<ParsedFile[]> {
   const patterns = [
     "**/*.{ts,tsx,js,jsx,mjs,cjs}",
@@ -70,9 +71,13 @@ export async function discoverAndParseFiles(
     "**/*.go",
   ];
 
+  const ignoreList = customIgnore && customIgnore.length > 0
+    ? [...DEFAULT_IGNORE, ...customIgnore]
+    : DEFAULT_IGNORE;
+
   const matched = await fg(patterns, {
     cwd: targetDir,
-    ignore: DEFAULT_IGNORE,
+    ignore: ignoreList,
     dot: false,
     absolute: false,
   });

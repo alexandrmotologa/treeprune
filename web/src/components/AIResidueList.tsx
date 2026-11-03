@@ -1,12 +1,14 @@
 import React from "react";
 import { AIDuplicateCluster } from "../types.js";
-import { Sparkles, FileCode } from "lucide-react";
+import { Sparkles, FileCode, Code } from "lucide-react";
+import { getEditorLink } from "../utils/editor.js";
 
 interface Props {
   clusters: AIDuplicateCluster[];
+  projectRoot: string;
 }
 
-export const AIResidueList: React.FC<Props> = ({ clusters }) => {
+export const AIResidueList: React.FC<Props> = ({ clusters, projectRoot }) => {
   if (clusters.length === 0) {
     return (
       <div className="bg-surface/60 border border-border/80 rounded-xl p-12 text-center flex flex-col items-center">
@@ -58,7 +60,16 @@ export const AIResidueList: React.FC<Props> = ({ clusters }) => {
                     key={i}
                     className="p-2 rounded bg-slate-900/60 border border-border/50 text-xs font-mono text-slate-300 flex items-center justify-between"
                   >
-                    <span className="truncate max-w-[280px]">{inst.filePath}:{inst.line}</span>
+                    <div className="flex items-center gap-1.5 truncate max-w-[280px]">
+                      <span>{inst.filePath}:{inst.line}</span>
+                      <a
+                        href={getEditorLink(projectRoot, inst.filePath, inst.line, "cursor")}
+                        className="p-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                        title="Open in Cursor"
+                      >
+                        <Code className="w-3 h-3 text-cyan-400" />
+                      </a>
+                    </div>
                     <span className="text-[11px] text-slate-500 shrink-0 ml-2">
                       {inst.callersCount} callers
                     </span>

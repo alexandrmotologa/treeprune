@@ -55,15 +55,18 @@ export async function parseSourceFile(fullPath, relativePath) {
         return null;
     }
 }
-export async function discoverAndParseFiles(targetDir, onProgress) {
+export async function discoverAndParseFiles(targetDir, onProgress, customIgnore) {
     const patterns = [
         "**/*.{ts,tsx,js,jsx,mjs,cjs}",
         "**/*.py",
         "**/*.go",
     ];
+    const ignoreList = customIgnore && customIgnore.length > 0
+        ? [...DEFAULT_IGNORE, ...customIgnore]
+        : DEFAULT_IGNORE;
     const matched = await fg(patterns, {
         cwd: targetDir,
-        ignore: DEFAULT_IGNORE,
+        ignore: ignoreList,
         dot: false,
         absolute: false,
     });

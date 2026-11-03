@@ -13,6 +13,7 @@ export interface PackageJsonConfig {
 
 export interface RootDetectionOptions {
   includeTests?: boolean;
+  customRoots?: string[];
 }
 
 export async function detectRootEntrypoints(
@@ -22,7 +23,21 @@ export async function detectRootEntrypoints(
 ): Promise<Set<string>> {
   const rootNodeIds = new Set<string>();
 
-  // 1. Ingest package.json to identify library roots and CLI bins
+  // 1. Ingest custom roots from configuration
+  if (options.customRoots && options.customRoots.length > 0) {
+    for (const cr of options.customRoots) {
+      const normCr = normalizePath(cr);
+      rootNodeIds.add(normCr);
+      for (const file of parsedFiles) {
+        if (file.filePath === normCr || file.filePath.endsWith(normCr)) {
+          rootNodeIds.add(file.filePath);
+          file.symbols.forEach((s) => rootNodeIds.add(s.id));
+        }
+      }
+    }
+  }
+
+  // 2. Ingest package.json to identify library roots and CLI bins
   let pkgJson: PackageJsonConfig | null = null;
   try {
     const pkgPath = path.join(projectRoot, "package.json");
