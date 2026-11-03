@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.DS_Store
+*.tmp
+.env
+.env.local
+.treeprune/
+web/dist/
+web/node_modules/
