@@ -1,25 +1,15 @@
 # TreePrune: Master Implementation Plan
 
-> **Whole-Codebase Polyglot Dead Code, Zombie Endpoint & Unused Export Pruner (TypeScript, Python, Go)**
->
-> *High-performance static analysis engine and code pruner for AI-generated and legacy codebases. Builds whole-project AST reachability graphs, identifies orphaned functions, detects zombie backend API routes never called by frontend clients, audits unused package dependencies, and synthesizes safe 1-click prune patches.*
+Whole-codebase dead code, zombie endpoint, and unused export pruner for TypeScript, Python, and Go.
 
----
+## 1. Architecture Overview
 
-## 1. Project Overview & Architecture
+TreePrune analyzes whole codebases across languages to identify code that is never reached from application entry points:
 
-Autonomous AI coding agents (Claude Code, Cursor, Devin) and agile development teams write code at breakneck speed. However, codebases rapidly accumulate technical debt and dead weight:
-1. **The AI-Code Bloat Epidemic**: AI agents generate duplicate utility functions, abandoned components, and unused types that linger permanently in repositories, confusing future agent context windows.
-2. **Zombie API Endpoints**: Backend controllers define dozens of API endpoints that frontend clients or mobile apps stopped calling months ago, wasting compute and expanding attack surfaces.
-3. **Bloated Dependencies**: Packages declared in `package.json`, `requirements.txt`, or `go.mod` remain installed despite their imports being deleted, inflating Docker image sizes and build times.
-4. **Flawed File-by-File Linters**: Traditional linters (ESLint, Ruff) analyze files in isolation and cannot detect when an exported function is unreachable across the broader project architecture.
-
-**TreePrune** provides a cross-language, whole-codebase reachability engine and pruning studio:
-- **Whole-Project Reference Graph**: Constructs a unified directed graph mapping Call Graphs, Import Trees, and Route Declarations across TypeScript, Python, and Go codebases.
-- **Root Entrypoint Reachability Analysis**: Starts from legitimate entrypoints (Next.js/Express/FastAPI/Gin route handlers, CLI `main()` functions, exported library roots) and traverses forward to isolate unreachable code islands.
-- **Zombie API Endpoint Detector**: Cross-references declared backend HTTP routes against frontend API client calls (`fetch`, `axios`, `trpc`, or generated SDKs), flagging orphaned endpoints.
-- **Dead Dependency & Export Auditor**: Identifies unused packages ready for deletion (`npm uninstall`, `pip uninstall`, `go mod tidy`) and unreferenced exports.
-- **Automated 1-Click Prune Patch**: Calculates exact byte savings and generates a clean Git branch with automated removal patches: `treeprune clean --branch cleanup-dead-code`.
+1. **AI Residue**: Autonomous coding agents generate utility functions, abandoned components, and redundant types that persist in repositories and crowd future context windows.
+2. **Zombie API Endpoints**: Backend controllers declare HTTP routes that frontend clients no longer call, retaining unused attack surface and compute overhead.
+3. **Dead Dependencies**: Packages declared in manifests (`package.json`, `requirements.txt`, `go.mod`) remain installed despite having zero imports in reachable code.
+4. **Whole-Graph Reachability**: Unlike single-file linters, TreePrune constructs a global reference graph from legitimate architectural entry points.
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -31,8 +21,8 @@ Autonomous AI coding agents (Claude Code, Cursor, Devin) and agile development t
 +-------v-------------------------+                 +-----------------------v-------+
 |   Polyglot AST Parser Engine    |                 |   Root Entrypoint Discoverer  |
 |  * TypeScript/JS (Babel/Recast) |                 |  * Next.js / Express Routes   |
-|  * Python (AST / Tree-Sitter)   |                 |  * FastAPI / Flask Handlers   |
-|  * Go (go/parser AST)           |                 |  * CLI main() & Export Roots  |
+|  * Python (AST / Tokenizer)     |                 |  * FastAPI / Flask Handlers   |
+|  * Go (AST & Export Scanner)    |                 |  * CLI main() & Export Roots  |
 +-------+-------------------------+                 +-----------------------+-------+
         |                                                                   |
         +---------------------------------+---------------------------------+
@@ -41,7 +31,7 @@ Autonomous AI coding agents (Claude Code, Cursor, Devin) and agile development t
                         |   Global Reachability Analyzer    |
                         |  * BFS / DFS Graph Traversal      |
                         |  * Unreachable Island Detection   |
-                        |  * Dynamic Eval & Reflection Flags|
+                        |  * Confidence & Dynamic Eval Guard|
                         +-----------------+-----------------+
                                           |
                         +-----------------v-----------------+
@@ -67,42 +57,66 @@ Autonomous AI coding agents (Claude Code, Cursor, Devin) and agile development t
 treeprune/
 ├── src/
 │   ├── parser/
-│   │   ├── typescript_parser.ts  # Babel/Recast AST parser for TS/JS
-│   │   ├── python_parser.ts      # Python AST and import resolver
-│   │   └── go_parser.ts          # Go AST callsite and export extractor
+│   │   ├── types.ts              # Common AST symbol and file models
+│   │   ├── typescript_parser.ts  # Babel/Recast parser for TS/JS/JSX/TSX
+│   │   ├── python_parser.ts      # Python AST parser for imports and calls
+│   │   └── go_parser.ts          # Go AST parser for packages and exports
 │   ├── graph/
-│   │   ├── call_graph.ts         # Direct and indirect function call edges
-│   │   ├── import_tree.ts        # Module dependency tree
-│   │   └── reachability.ts       # Graph traversal and unreferenced node finder
+│   │   ├── types.ts              # Graph node and edge schemas
+│   │   ├── call_graph.ts         # Directed symbol reference graph
+│   │   ├── import_tree.ts        # Module import hierarchy
+│   │   └── reachability.ts       # Breadth-first search reachable traversal
 │   ├── detectors/
-│   │   ├── entrypoints.ts        # Identifies frameworks: Next.js, Express, FastAPI, Gin
-│   │   ├── zombie_routes.ts      # Correlates backend endpoints with frontend callsites
-│   │   ├── dead_exports.ts       # Unused export declaration scanner
-│   │   └── unused_deps.ts        # package.json, requirements.txt, go.mod auditor
+│   │   ├── entrypoints.ts        # Framework root discoverer (Next.js, Express, FastAPI, Gin)
+│   │   ├── zombie_routes.ts      # Backend route and frontend client cross-matcher
+│   │   ├── dead_exports.ts       # Unused export scanner
+│   │   ├── unused_deps.ts        # Manifest auditor (package.json, requirements.txt, go.mod)
+│   │   └── ai_residue.ts         # AI clone helper and boilerplate detector
 │   ├── pruner/
-│   │   ├── safe_remover.ts       # Rewrites AST to safely remove dead functions/types
-│   │   ├── git_patch.ts          # Creates clean git feature branch with atomic commits
-│   │   └── backup.ts             # Rollback snapshot manager
+│   │   ├── safe_remover.ts       # Recast non-destructive code modifier
+│   │   ├── git_patch.ts          # Branch creator and atomic committer
+│   │   └── backup.ts             # Snapshot creator and rollback manager
 │   ├── server/
-│   │   ├── api.ts                # Fastify backend for web studio
-│   │   └── sse.ts                # Live scan progress event stream
-│   └── cli.ts                    # Commander CLI entrypoint
+│   │   ├── api.ts                # Fastify REST endpoints
+│   │   ├── sse.ts                # Server-sent events progress broadcaster
+│   │   └── index.ts              # Server bootstrap and static file hosting
+│   ├── reporter/
+│   │   ├── table_reporter.ts     # CLI terminal table formatter
+│   │   ├── json_reporter.ts      # Structured JSON output
+│   │   └── sarif_reporter.ts     # SARIF output for GitHub Actions annotations
+│   ├── engine.ts                 # Central orchestrator connecting parsers, graph, detectors
+│   └── cli.ts                    # Commander CLI entry point
 ├── web/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── DeadWeightMetrics.tsx # Wasted KB, lines of code, and dead file count
-│   │   │   ├── ReachabilityGraph.tsx # Interactive D3 node graph showing orphaned islands
-│   │   │   ├── ZombieRouteList.tsx   # Abandoned API endpoints with last commit age
-│   │   │   └── PrunePreviewModal.tsx # Side-by-side diff of proposed removals
+│   │   │   ├── DeadWeightMetrics.tsx # Savings counter (KB, LOC, files, packages)
+│   │   │   ├── ReachabilityGraph.tsx # Canvas/SVG graph cluster viewer
+│   │   │   ├── ZombieRouteList.tsx   # Uncalled endpoint table
+│   │   │   ├── DeadItemList.tsx      # Filterable list of dead files and exports
+│   │   │   ├── UnusedDepsList.tsx    # Unused dependencies and uninstall commands
+│   │   │   └── PrunePreviewModal.tsx # Side-by-side diff modal before pruning
 │   │   ├── hooks/
-│   │   │   └── usePruneAnalysis.ts
-│   │   ├── App.tsx
+│   │   │   └── usePruneAnalysis.ts   # Analysis state and SSE connection
+│   │   ├── App.tsx                   # Main studio view
+│   │   ├── index.css                 # Tailwind styles
 │   │   └── main.tsx
+│   ├── index.html
 │   ├── package.json
-│   └── vite.config.ts
+│   ├── vite.config.ts
+│   └── tailwind.config.js
 ├── tests/
+│   ├── fixtures/                 # Polyglot sample repos with intentional dead code
+│   │   ├── typescript_sample/
+│   │   ├── python_sample/
+│   │   └── go_sample/
+│   ├── typescript_parser.test.ts
+│   ├── python_parser.test.ts
+│   ├── go_parser.test.ts
 │   ├── reachability.test.ts
-│   └── zombie_routes.test.ts
+│   ├── zombie_routes.test.ts
+│   ├── unused_deps.test.ts
+│   ├── safe_remover.test.ts
+│   └── e2e_scan_clean.test.ts
 ├── package.json
 ├── tsconfig.json
 └── README.md
@@ -110,69 +124,84 @@ treeprune/
 
 ---
 
-## 3. Implementation Roadmap
+## 3. Implementation Plan & Phases
 
-### Phase 1: Polyglot AST Ingestion & Module Call Graph
-- Implement `src/parser/typescript_parser.ts`:
-  - Parse files using `@babel/parser` with full TypeScript and JSX plugins.
-  - Extract: `ImportDeclaration`, `ExportNamedDeclaration`, `ExportDefaultDeclaration`, `CallExpression`, `Identifier`.
-- Implement `src/parser/python_parser.ts` and `go_parser.ts`:
-  - Resolve module paths, relative imports, and function calls.
-- Construct `src/graph/call_graph.ts`:
-  - Build directed adjacency matrix: Node = `filepath:symbolName`, Edge = `calls / imports`.
+### Phase 1: Core Polyglot AST Parsers & Symbol Extractor
+- Task 1.1: Project scaffolding with TypeScript 5, Babel parser/traverse, Recast, Fastify, Commander, Vitest.
+- Task 1.2: Implement `src/parser/typescript_parser.ts`:
+  - Parses `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`.
+  - Extracts imports (`ImportDeclaration`, dynamic `import()`, `require()`).
+  - Extracts exports (`ExportNamedDeclaration`, `ExportDefaultDeclaration`, `export * from`).
+  - Extracts declared symbols (functions, classes, consts, interfaces, types).
+  - Extracts function calls, method invocations, and JSX component references (`<Header />`).
+- Task 1.3: Implement `src/parser/python_parser.ts`:
+  - Parses `.py` files.
+  - Extracts `import foo`, `from foo import bar`, `__all__` lists.
+  - Extracts function and class definitions, decorators (`@app.get`), and callsites.
+- Task 1.4: Implement `src/parser/go_parser.ts`:
+  - Parses `.go` files.
+  - Extracts package declarations, imports, functions, methods, and capitalized exports.
+  - Extracts callsites and HTTP handler registrations.
 
-### Phase 2: Root Entrypoint Discovery & Reachability Traversal
-- Implement `src/detectors/entrypoints.ts`:
-  - Automatically identify legitimate starting points:
-    - Next.js App Router (`app/**/page.tsx`, `route.ts`) and Pages Router (`pages/**/*.tsx`).
-    - Express / Fastify / Gin / FastAPI route registrations (`app.get(...)`, `@app.get(...)`).
-    - CLI entrypoints (`main.go`, `cli.ts`, `if __name__ == "__main__":`).
-    - Library package entrypoints defined in `package.json` (`main`, `exports`).
-- Implement `src/graph/reachability.ts`:
-  - Perform Breadth-First Search (BFS) starting from all identified entrypoints.
-  - Any node not visited during traversal is marked as **DEAD CODE**.
+### Phase 2: Root Entrypoint Discovery & Graph Reachability Engine
+- Task 2.1: Implement `src/detectors/entrypoints.ts`:
+  - Next.js App Router (`app/**/page.*`, `app/**/route.*`, `app/**/layout.*`, `app/**/error.*`).
+  - Next.js Pages Router (`pages/**/*.*`, `pages/api/**/*.*`).
+  - Express / Fastify / Koa route registrations.
+  - FastAPI / Flask route decorators.
+  - Gin / Chi / Go `main` packages and `func main()`.
+  - Library export roots configured in `package.json` (`main`, `module`, `exports`).
+  - CLI commands in `package.json` (`bin`).
+- Task 2.2: Implement `src/graph/call_graph.ts` and `src/graph/import_tree.ts`:
+  - Builds directed adjacency graph linking symbol nodes via caller, reference, and import edges.
+- Task 2.3: Implement `src/graph/reachability.ts`:
+  - Performs BFS traversal from discovered root entry points.
+  - Identifies unvisited nodes (dead functions, orphaned exports, unreachable files).
+  - Computes confidence scores: High (static certainty), Medium (contains dynamic references), Low.
 
-### Phase 3: Zombie API Endpoint Detector
-- Implement `src/detectors/zombie_routes.ts`:
-  - Ingest backend declared routes: Method (GET/POST) and URL Path Pattern (e.g. `/api/v1/users/:id`).
-  - Scan frontend client codebases for matching string literals, template strings, or generated API client methods (e.g. `api.users.get(id)` or `fetch('/api/v1/users/' + id)`).
-  - Flag any backend endpoint with 0 frontend callsites as a **ZOMBIE ENDPOINT**.
+### Phase 3: Zombie API Endpoint & Dead Dependency Detectors
+- Task 3.1: Implement `src/detectors/zombie_routes.ts`:
+  - Backend route extraction: parses HTTP method and normalized route templates (e.g. `/api/users/:id`, `/items/{item_id}`).
+  - Frontend client callsite scanner: extracts URLs from `fetch()`, `axios.get/post()`, `ky`, `apiClient` calls.
+  - Path normalization matching: parameterized paths match dynamic template strings and variable interpolations.
+  - Flags backend endpoints with 0 client invocations as Zombie Endpoints.
+- Task 3.2: Implement `src/detectors/unused_deps.ts`:
+  - Ingests `dependencies` from `package.json`, `requirements.txt`, and `go.mod`.
+  - Compares declared packages against reachable module imports.
+  - Flags unused packages and provides exact uninstall commands.
+- Task 3.3: Implement `src/detectors/ai_residue.ts`:
+  - Identifies duplicate helper functions with matching normalized AST fingerprints across directories.
+  - Flags unused boilerplate types and orphan helper modules typical of AI coding sessions.
 
-### Phase 4: Dead Dependency Auditor & Safe Removal Synthesizer
-- Implement `src/detectors/unused_deps.ts`:
-  - Parse `dependencies` in `package.json`.
-  - Compare declared packages against actual reachable import statements.
-  - Flag packages that are never imported anywhere in the reachable code graph.
-- Implement `src/pruner/safe_remover.ts` using `recast`:
-  - Remove dead export statements, functions, and interfaces while preserving surrounding code formatting and comments.
-  - If removing an entire file, delete the file and clean up its export in `index.ts`.
+### Phase 4: AST-Preserving Pruner & Rollback Manager
+- Task 4.1: Implement `src/pruner/safe_remover.ts`:
+  - Uses Recast for TypeScript/JavaScript to remove dead named exports, functions, and variables without altering surrounding comments or formatting.
+  - Handles complete file removals and cleans corresponding re-exports in parent barrel files (`index.ts`).
+  - Updates `package.json` to cleanly remove dead dependencies.
+- Task 4.2: Implement `src/pruner/backup.ts`:
+  - Creates timestamped snapshots in `.treeprune/snapshots/<id>` before mutations.
+  - Restores snapshots with `treeprune rollback`.
+- Task 4.3: Implement `src/pruner/git_patch.ts`:
+  - Creates a dedicated cleanup branch (`treeprune/cleanup-dead-code`).
+  - Commits pruned changes with a structured summary commit message.
 
-### Phase 5: Web Studio, Git PR Patch & CLI
-- Build modern React 19 interface in `web/`:
-  - **Dead Weight Metrics Scorecard**: Display total lines eliminated, bundle size reduction (KB), and dead dependencies.
-  - **Reachability Graph Viewer**: Interactive visual cluster highlighting connected components vs dead islands.
-  - **1-Click Clean Branch**: Automatically executes `git checkout -b prune-dead-code` and commits changes.
-- Implement CLI commands:
-  - `npx treeprune scan --dir ./my-project`: Output dead code report.
-  - `npx treeprune clean --dir ./my-project --dry-run`: Preview removals.
-  - `npx treeprune serve --port 9840`: Launch interactive web studio.
+### Phase 5: Fastify Backend & React 19 Web Studio
+- Task 5.1: Implement `src/server/api.ts` and `src/server/sse.ts`:
+  - Endpoints: `POST /api/scan`, `GET /api/events`, `POST /api/prune`, `GET /api/diff`, `GET /api/status`.
+  - Real-time progress updates via SSE during parsing and graph generation.
+- Task 5.2: Build React 19 Web Studio in `web/`:
+  - Dead Weight Scorecard: Wasted KB, eliminated lines of code, dead files, zombie endpoints.
+  - Reachability Graph: Interactive SVG/Canvas node visualizer showing connected roots vs isolated islands.
+  - Zombie Route Table: Filterable list of orphaned routes.
+  - Dead Items & Diff Preview: Side-by-side AST removal diffs before applying prunes.
+  - 1-Click Prune Button: Triggers server-side branch creation and commit.
 
----
-
-## 4. Agent Kickoff Prompt
-
-```markdown
-You are implementing **TreePrune**, a whole-codebase polyglot dead code, zombie endpoint, and unused export pruner in Node.js 22 + TypeScript + React 19.
-
-### Execution Plan:
-1. Initialize the project in `B:\workgit\treeprune` with root `package.json`, TypeScript configuration, and dependencies (`@babel/parser`, `@babel/traverse`, `recast`, `fastify`, `commander`).
-2. Implement `src/parser/` to parse TypeScript/JavaScript, Python, and Go files into ASTs and extract function calls and import declarations.
-3. Implement `src/detectors/entrypoints.ts` to identify root starting points (Next.js/Express routes, CLI mains, exported library symbols).
-4. Implement `src/graph/reachability.ts` to build the whole-project call graph and perform BFS traversal to isolate unreachable code islands.
-5. Implement `src/detectors/zombie_routes.ts` to detect backend API routes that have zero callsites in frontend clients.
-6. Implement `src/pruner/` to safely rewrite ASTs, remove dead code, and generate a clean Git cleanup branch.
-7. Build the modern React 19 web studio in `web/` featuring the Dead Weight Scorecard, Reachability Graph Viewer, and Diff Preview.
-8. Implement the CLI in `src/cli.ts` supporting `scan`, `clean`, and `serve --port 9840`.
-
-Maintain 100% production code without mocks, placeholders, or empty handlers.
-```
+### Phase 6: CLI, CI Reporter & Comprehensive Testing
+- Task 6.1: Implement `src/cli.ts` with Commander:
+  - Commands: `scan`, `clean`, `serve`, `rollback`.
+  - Output formats: formatted tables, JSON, and SARIF for GitHub Actions.
+- Task 6.2: Build test fixtures in `tests/fixtures/`:
+  - Polyglot repository covering TypeScript (Next.js + Express), Python (FastAPI), and Go (Gin).
+- Task 6.3: Comprehensive test suite:
+  - Unit tests for all parsers, graph reachability, detectors, and code modifier.
+  - End-to-end integration test verifying full scan, dry-run, actual prune, and rollback.
