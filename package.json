@@ -1,6 +1,7 @@
 {
   "name": "treeprune",
   "version": "1.0.0",
+  "type": "module",
   "description": "Whole-codebase static analysis and dead code pruner for TypeScript, Python, and Go",
   "main": "dist/index.js",
   "bin": {

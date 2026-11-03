@@ -34,15 +34,15 @@ export async function detectRootEntrypoints(
 
   const manifestRootFiles = new Set<string>();
   if (pkgJson) {
-    if (pkgJson.main) manifestRootFiles.add(normalizePath(pkgJson.main));
-    if (pkgJson.module) manifestRootFiles.add(normalizePath(pkgJson.module));
+    if (pkgJson.main) addSourceVariants(manifestRootFiles, pkgJson.main);
+    if (pkgJson.module) addSourceVariants(manifestRootFiles, pkgJson.module);
     if (typeof pkgJson.bin === "string") {
-      manifestRootFiles.add(normalizePath(pkgJson.bin));
+      addSourceVariants(manifestRootFiles, pkgJson.bin);
     } else if (pkgJson.bin && typeof pkgJson.bin === "object") {
-      Object.values(pkgJson.bin).forEach((b) => manifestRootFiles.add(normalizePath(b)));
+      Object.values(pkgJson.bin).forEach((b) => addSourceVariants(manifestRootFiles, b));
     }
     if (typeof pkgJson.exports === "string") {
-      manifestRootFiles.add(normalizePath(pkgJson.exports));
+      addSourceVariants(manifestRootFiles, pkgJson.exports);
     } else if (pkgJson.exports && typeof pkgJson.exports === "object") {
       collectExportStrings(pkgJson.exports, manifestRootFiles);
     }
@@ -125,9 +125,12 @@ export async function detectRootEntrypoints(
       baseName === "index.js"
     ) {
       rootNodeIds.add(norm);
-      // If it has a main or default function, mark it
+      // If it has a main or default function, mark it as entrypoint root
       file.symbols.forEach((s) => {
-        if (["main", "__main__", "run", "start", "default"].includes(s.name) || s.isExported) {
+        if (
+          ["main", "__main__", "run", "start", "default"].includes(s.name) ||
+          (baseName.startsWith("index.") && s.isExported)
+        ) {
           rootNodeIds.add(s.id);
         }
       });
@@ -157,13 +160,27 @@ function normalizePath(p: string): string {
   return p.replace(/^[.\\/]+/, "").replace(/\\/g, "/");
 }
 
+function addSourceVariants(targetSet: Set<string>, filePath: string): void {
+  const norm = normalizePath(filePath);
+  targetSet.add(norm);
+
+  // Map dist/, build/, lib/ to src/
+  const srcVariant = norm.replace(/^(?:dist|build|lib|out)[\\/]/, "src/");
+  targetSet.add(srcVariant);
+
+  // Map .js/.mjs/.cjs to .ts/.tsx
+  const tsVariant = srcVariant.replace(/\.m?[jt]sx?$/, ".ts");
+  targetSet.add(tsVariant);
+  targetSet.add(tsVariant + "x");
+}
+
 function stripExt(p: string): string {
   return p.replace(/\.[a-zA-Z0-9]+$/, "");
 }
 
 function collectExportStrings(exportsObj: any, set: Set<string>): void {
   if (typeof exportsObj === "string") {
-    set.add(normalizePath(exportsObj));
+    addSourceVariants(set, exportsObj);
   } else if (typeof exportsObj === "object" && exportsObj !== null) {
     for (const val of Object.values(exportsObj)) {
       collectExportStrings(val, set);

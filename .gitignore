@@ -1,6 +1,5 @@
 node_modules/
-dist/
-build/
+web/node_modules/
 coverage/
 *.log
 .DS_Store
@@ -8,5 +7,3 @@ coverage/
 .env
 .env.local
 .treeprune/
-web/dist/
-web/node_modules/

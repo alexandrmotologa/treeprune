@@ -137,10 +137,12 @@ export function buildCallGraph(parsedFiles: ParsedFile[]): GraphBuildResult {
 
     if (fileMap.has(resolvedRel)) return resolvedRel;
 
-    const candidates = filesByStem.get(resolvedRel);
+    // Stem match (e.g. resolve .js to .ts/.tsx in NodeNext ESM)
+    const cleanStem = resolvedRel.replace(/\.[a-zA-Z0-9]+$/, "");
+    const candidates = filesByStem.get(cleanStem);
     if (candidates && candidates.length > 0) return candidates[0];
 
-    const indexStem = `${resolvedRel}/index`;
+    const indexStem = `${cleanStem}/index`;
     const indexCandidates = filesByStem.get(indexStem);
     if (indexCandidates && indexCandidates.length > 0) return indexCandidates[0];
 

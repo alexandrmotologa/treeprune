@@ -103,6 +103,13 @@ export async function createPrunePlan(
   };
 }
 
+function getIdName(id: any): string | null {
+  if (!id) return null;
+  if (typeof id === "string") return id;
+  if (typeof id.name === "string") return id.name;
+  return null;
+}
+
 export function removeSymbolsFromCode(
   code: string,
   symbolNames: string[],
@@ -128,21 +135,26 @@ export function removeSymbolsFromCode(
 
         // Named export with declaration: export function foo() {}
         if (node.declaration) {
-          const decl = node.declaration;
-          if (decl.type === "FunctionDeclaration" && decl.id && targets.has(decl.id.name)) {
+          const decl: any = node.declaration;
+          const fnName = getIdName(decl.id);
+          if (decl.type === "FunctionDeclaration" && fnName && targets.has(fnName)) {
             pathRef.prune();
             return false;
           }
           if (decl.type === "VariableDeclaration") {
             decl.declarations = decl.declarations.filter(
-              (d: any) => !(d.id && d.id.type === "Identifier" && targets.has(d.id.name))
+              (d: any) => {
+                const varName = getIdName(d.id);
+                return !(varName && targets.has(varName));
+              }
             );
             if (decl.declarations.length === 0) {
               pathRef.prune();
               return false;
             }
           }
-          if (decl.type === "ClassDeclaration" && decl.id && targets.has(decl.id.name)) {
+          const clsName = getIdName(decl.id);
+          if (decl.type === "ClassDeclaration" && clsName && targets.has(clsName)) {
             pathRef.prune();
             return false;
           }
@@ -151,7 +163,7 @@ export function removeSymbolsFromCode(
         // Export specifiers: export { a, b as c }
         if (node.specifiers && node.specifiers.length > 0) {
           node.specifiers = node.specifiers.filter((s: any) => {
-            const expName = s.exported ? s.exported.name : s.local?.name;
+            const expName = s.exported ? (s.exported.name || s.exported.value) : s.local?.name;
             return !targets.has(expName);
           });
           if (node.specifiers.length === 0) {
@@ -165,7 +177,8 @@ export function removeSymbolsFromCode(
 
       visitFunctionDeclaration(pathRef) {
         const node = pathRef.node;
-        if (node.id && targets.has(node.id.name)) {
+        const fnName = getIdName(node.id);
+        if (fnName && targets.has(fnName)) {
           pathRef.prune();
           return false;
         }
@@ -174,14 +187,16 @@ export function removeSymbolsFromCode(
 
       visitVariableDeclaration(pathRef) {
         const node = pathRef.node;
-        // Don't duplicate prune if already handled by ExportNamedDeclaration
         if (pathRef.parent?.node?.type === "ExportNamedDeclaration") {
           this.traverse(pathRef);
           return;
         }
 
         node.declarations = node.declarations.filter(
-          (d: any) => !(d.id && d.id.type === "Identifier" && targets.has(d.id.name))
+          (d: any) => {
+            const varName = getIdName(d.id);
+            return !(varName && targets.has(varName));
+          }
         );
 
         if (node.declarations.length === 0) {
@@ -197,7 +212,8 @@ export function removeSymbolsFromCode(
           this.traverse(pathRef);
           return;
         }
-        if (node.id && targets.has(node.id.name)) {
+        const clsName = getIdName(node.id);
+        if (clsName && targets.has(clsName)) {
           pathRef.prune();
           return false;
         }
