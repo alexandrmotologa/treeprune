@@ -39,6 +39,9 @@ export function usePruneAnalysis() {
           setReport(repData);
           initSelection(repData);
         }
+      } else {
+        // Trigger initial scan if no report exists yet
+        triggerScan();
       }
     } catch (err: any) {
       setError(err.message);

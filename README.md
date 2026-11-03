@@ -1,10 +1,56 @@
-# TreePrune
+<p align="center">
+  <img src="docs/images/logo.png?raw=true" alt="TreePrune Logo" width="130" style="border-radius: 24px;" />
+</p>
 
-Whole-codebase static analysis and dead code pruner for TypeScript, Python, and Go.
+<h1 align="center">TreePrune</h1>
 
-AI coding assistants, rapid refactors, and abandoned prototypes leave behind orphaned helper functions, zombie HTTP endpoints that frontends never call, commented-out code blocks, duplicate helper clones, and unused entries in package dependency files. Traditional linters inspect single files in isolation, so they miss symbols that are exported but never reached from any real application entry point.
+<p align="center">
+  <strong>Whole-codebase static analysis and dead code pruner for TypeScript, Python, and Go</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/alexandrmotologa/treeprune/actions"><img src="https://img.shields.io/badge/CI-passing-emerald.svg?style=flat-square" alt="CI Status" /></a>
+  <a href="https://www.npmjs.com/package/treeprune"><img src="https://img.shields.io/npm/v/treeprune.svg?style=flat-square&color=00f5ff" alt="npm version" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License" /></a>
+</p>
+
+---
+
+<p align="center">
+  <img src="docs/images/treeprune_demo.gif?raw=true" alt="TreePrune Interactive Studio Demo" width="920" style="border-radius: 12px; box-shadow: 0 16px 32px rgba(0,0,0,0.4);" />
+</p>
+
+AI coding assistants, rapid refactors, and abandoned prototypes leave behind orphaned helper functions, zombie HTTP endpoints that frontends never call, commented-out dead code blocks, duplicate helper clones, and unused entries in package dependency files. Traditional linters inspect single files in isolation, so they miss symbols that are exported but never reached from any real application entry point.
 
 TreePrune traces reachability across the entire project graph. It detects root entry points (Next.js and Express routes, FastAPI and Flask handlers, Gin routes, and CLI main functions), builds an AST-backed call and import graph, detects unreachable islands, and creates an automated Git cleanup branch with safe rollback snapshots.
+
+---
+
+## Interactive Web Studio & Dashboard
+
+TreePrune includes a local browser studio powered by Fastify and React 19. It renders your entire project reachability graph on an interactive canvas, categorizes dead weight, matches zombie routes, and offers single-click IDE deep linking.
+
+<p align="center">
+  <img src="docs/images/treeprune_dashboard.png?raw=true" alt="TreePrune Reachability Graph & Dead Weight Scorecard" width="920" style="border-radius: 10px; margin-bottom: 20px;" />
+</p>
+
+### Zombie Endpoint & Dependency Auditing
+
+Backend route handlers that have zero matching client callsites are flagged alongside unreferenced entries in `package.json`, `requirements.txt`, or `go.mod`.
+
+<p align="center">
+  <img src="docs/images/treeprune_zombie_routes.png?raw=true" alt="TreePrune Zombie Route Detector" width="920" style="border-radius: 10px; margin-bottom: 20px;" />
+</p>
+
+### Safe Non-Destructive Code Rewriting
+
+Preview exact side-by-side AST transformations before committing removals to a dedicated Git branch:
+
+<p align="center">
+  <img src="docs/images/treeprune_diff_modal.png?raw=true" alt="TreePrune AST Rewrite Diff Modal" width="760" style="border-radius: 10px;" />
+</p>
+
+---
 
 ## Capabilities
 
@@ -22,6 +68,8 @@ TreePrune traces reachability across the entire project graph. It detects root e
 - Dedicated Git branch generation (`treeprune clean --branch cleanup-dead-code`) with automatic snapshot rollback backups.
 - Automated GitHub Actions workflow generator (`treeprune init-ci`) with SARIF upload to GitHub Code Scanning.
 
+---
+
 ## Installation
 
 ```bash
@@ -33,6 +81,8 @@ Or run directly with npx:
 ```bash
 npx treeprune scan
 ```
+
+---
 
 ## Quick Start
 
@@ -89,6 +139,8 @@ treeprune init-ci
 
 This creates `.github/workflows/treeprune-audit.yml` configured to scan on push and pull requests and upload results directly to GitHub Code Scanning.
 
+---
+
 ## Configuration File (`treeprune.config.json`)
 
 Configure custom rules, preserve symbols, set threshold limits, or choose your preferred editor:
@@ -116,6 +168,8 @@ Configure custom rules, preserve symbols, set threshold limits, or choose your p
 }
 ```
 
+---
+
 ## How It Works
 
 1. **AST Ingestion**: Parses project source files into AST representations, extracting imports, exports, functions, classes, and callsites.
@@ -125,6 +179,8 @@ Configure custom rules, preserve symbols, set threshold limits, or choose your p
 5. **Route Cross-Matching**: Compares declared backend routes against frontend network callsites, flagging uncalled endpoints as zombies.
 6. **Residue Detection**: Identifies duplicated helper functions, commented-out dead code blocks, and redundant duplicate types.
 7. **Safe AST Rewriting & Verification**: Safely removes dead exports, functions, and unused dependencies using Recast, verifies project compilation, and commits to a dedicated Git branch.
+
+---
 
 ## Project Structure
 
@@ -143,6 +199,8 @@ treeprune/
 ├── tests/               # Unit, integration, and fixture tests
 └── docs/                # Architecture and API documentation
 ```
+
+---
 
 ## License
 

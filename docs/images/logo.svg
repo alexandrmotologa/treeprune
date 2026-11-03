@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="squircle-clip">
+      <rect x="24" y="24" width="976" height="976" rx="220" />
+    </clipPath>
+
+    <!-- Electric Cyan Gradient -->
+    <linearGradient id="cyan-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5ff"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <!-- Emerald Leaf / Clean Tree Life Gradient -->
+    <linearGradient id="emerald-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <!-- Titanium Steel Beak Gradients -->
+    <linearGradient id="beak-top" x1="0%" y1="0%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#cbd5e1"/>
+      <stop offset="60%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#00f5ff"/>
+    </linearGradient>
+
+    <linearGradient id="beak-bottom" x1="0%" y1="0%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="60%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <!-- Volumetric Obsidian Lighting -->
+    <linearGradient id="facet-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+
+    <linearGradient id="facet-mid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <linearGradient id="facet-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0b0f19"/>
+    </linearGradient>
+
+    <filter id="subtle-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.14" />
+    </filter>
+  </defs>
+
+  <!-- Luxury White Squircle Container -->
+  <rect x="24" y="24" width="976" height="976" rx="220" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+  <g clip-path="url(#squircle-clip)">
+    <g transform="translate(512, 512)" filter="url(#subtle-shadow)">
+
+      <!-- Hexagonal Architectural Gateway Frame -->
+      <polygon points="
+        0,-390
+        338,-195
+        338,195
+        0,390
+        -338,195
+        -338,-195
+      " fill="none" stroke="#0f172a" stroke-width="40" stroke-linejoin="round" />
+
+      <!-- Inner Precision Dashed Telemetry Ring -->
+      <polygon points="
+        0,-355
+        307,-177
+        307,177
+        0,355
+        -307,177
+        -307,-177
+      " fill="none" stroke="#00f5ff" stroke-width="4" opacity="0.45" stroke-dasharray="16, 12" />
+
+      <!-- Centered Woodpecker & Trunk Composition -->
+      <g transform="translate(-10, 0)">
+        <!-- The AST Tree Trunk (Bounded Architectural Pillar inside Hexagon) -->
+        <polygon points="-210,-240 -150,-240 -150,260 -210,260" fill="#0f172a" rx="10" />
+        <line x1="-180" y1="-220" x2="-180" y2="240" stroke="#00f5ff" stroke-width="3" opacity="0.45" stroke-dasharray="10, 8" />
+        <circle cx="-180" cy="-160" r="6" fill="#10b981" />
+        <circle cx="-180" cy="-20" r="8" fill="#00f5ff" />
+        <circle cx="-180" cy="120" r="6" fill="#10b981" />
+        <circle cx="-180" cy="220" r="6" fill="#00f5ff" />
+
+        <!-- 100% Watertight Solid Base Silhouette of Heraldic Woodpecker -->
+        <path d="
+          M -150,140
+          L -110,280
+          L -70,320
+          L -40,250
+          L 40,220
+          L 110,140
+          L 150,30
+          L 120,-70
+          L 280,-40
+          L 100,-110
+          L 50,-170
+          L -20,-230
+          L -90,-245
+          L -70,-180
+          L -120,-130
+          L -150,-40
+          Z
+        " fill="#0b0f19" />
+
+        <!-- === Low-Poly Facets of the Woodpecker Sentinel === -->
+
+        <!-- 1. Crown / Crest Feathers (Sharp Obsidian & Emerald Spikes) -->
+        <polygon points="-20,-230 -90,-245 -60,-180" fill="url(#emerald-glow)" />
+        <polygon points="-20,-230 -60,-180 20,-175" fill="url(#facet-light)" />
+        <polygon points="-90,-245 -70,-180 -120,-170" fill="#047857" />
+        <polygon points="-60,-180 -120,-170 -100,-120" fill="url(#facet-dark)" />
+        <polygon points="-20,-230 20,-175 50,-170" fill="url(#emerald-glow)" opacity="0.9" />
+
+        <!-- 2. Cranial Dome & Forehead -->
+        <polygon points="20,-175 50,-170 100,-110 40,-115" fill="url(#facet-light)" />
+        <polygon points="20,-175 40,-115 -40,-120" fill="url(#facet-mid)" />
+        <polygon points="-60,-180 20,-175 -40,-120" fill="#1e293b" />
+        <polygon points="-100,-120 -40,-120 -60,-60" fill="url(#facet-dark)" />
+
+        <!-- 3. The Long Surgical Pruning Chisel Beak -->
+        <!-- Upper Chisel Blade (Steel Light to Cyan) -->
+        <polygon points="100,-110 280,-40 90,-65" fill="url(#beak-top)" />
+        <!-- Lower Chisel Blade (Steel Dark to Sapphire) -->
+        <polygon points="90,-65 280,-40 70,-40" fill="url(#beak-bottom)" />
+        <!-- Beak Base Gusset -->
+        <polygon points="100,-110 90,-65 40,-75" fill="#334155" />
+        <polygon points="90,-65 70,-40 40,-50" fill="#1e293b" />
+
+        <!-- 4. Focused Predator Eye (Electric Cyan Almond Geometry) -->
+        <polygon points="30,-105 75,-90 35,-75 5,-90" fill="#0b0f19" />
+        <polygon points="35,-100 70,-88 38,-78 12,-88" fill="url(#cyan-glow)" />
+        <polygon points="45,-96 55,-88 47,-82" fill="#ffffff" /> <!-- Specular Glint -->
+
+        <!-- 5. Cheeks, Jaw & Malar Facets -->
+        <polygon points="40,-115 100,-110 90,-65 40,-75" fill="#475569" />
+        <polygon points="40,-75 70,-40 20,-20 0,-60" fill="url(#facet-light)" />
+        <polygon points="70,-40 105,-20 50,20 20,-20" fill="url(#facet-mid)" />
+
+        <!-- 6. Powerful Breast & Pectoral Armor Plates -->
+        <polygon points="105,-20 150,30 80,70 50,20" fill="url(#facet-light)" />
+        <polygon points="150,30 135,100 70,120 80,70" fill="url(#facet-mid)" />
+        <polygon points="135,100 100,160 40,165 70,120" fill="#1e293b" />
+        <polygon points="100,160 50,220 0,200 40,165" fill="url(#facet-dark)" />
+
+        <!-- 7. Geometric Wing Coverts & Folded Flight Feathers (AST DAG Plates) -->
+        <polygon points="20,-20 50,20 80,70 -10,50" fill="#1e293b" />
+        <polygon points="-60,-60 20,-20 -10,50 -70,0" fill="url(#facet-dark)" />
+        <polygon points="-70,0 -10,50 30,130 -60,90" fill="#334155" />
+        <polygon points="-60,90 30,130 10,210 -80,160" fill="#1e293b" />
+        <polygon points="-80,160 10,210 -20,265 -100,220" fill="url(#facet-dark)" />
+
+        <!-- 8. Tail Prop / Spine (Stiff Tail Brace against Tree) -->
+        <polygon points="-80,160 -100,220 -130,290 -60,315 -40,250" fill="#0f172a" />
+        <polygon points="-60,315 -130,290 -145,300 -70,325" fill="url(#facet-mid)" />
+
+        <!-- 9. Strong Clutches / Talons Gripping AST Tree -->
+        <!-- Upper Talon Clamping Pillar -->
+        <polygon points="-150,-20 -110,-40 -80,-15 -125,0" fill="#64748b" />
+        <polygon points="-125,0 -80,-15 -90,15 -135,10" fill="#475569" />
+        <circle cx="-115" cy="-8" r="4" fill="#00f5ff" />
+
+        <!-- Lower Talon Clamping Pillar -->
+        <polygon points="-150,140 -105,120 -75,145 -120,160" fill="#64748b" />
+        <polygon points="-120,160 -75,145 -85,175 -130,170" fill="#475569" />
+        <circle cx="-110" cy="150" r="4" fill="#00f5ff" />
+
+        <!-- Cyan Telemetry Laser Lines (AST Data Flow on Wing) -->
+        <line x1="-70" y1="0" x2="-10" y2="50" stroke="#00f5ff" stroke-width="2.5" opacity="0.6" />
+        <line x1="-10" y1="50" x2="30" y2="130" stroke="#00f5ff" stroke-width="2.5" opacity="0.6" />
+        <line x1="30" y1="130" x2="10" y2="210" stroke="#10b981" stroke-width="2" opacity="0.7" />
+        <line x1="10" y1="210" x2="-20" y2="265" stroke="#10b981" stroke-width="2" opacity="0.7" />
+
+        <circle cx="-10" cy="50" r="4" fill="#00f5ff" />
+        <circle cx="30" cy="130" r="4" fill="#00f5ff" />
+        <circle cx="10" cy="210" r="4" fill="#10b981" />
+      </g>
+
+    </g>
+  </g>
+</svg>

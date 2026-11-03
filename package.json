@@ -49,6 +49,9 @@
     "@types/babel__generator": "^7.6.8",
     "@types/babel__traverse": "^7.20.6",
     "@types/node": "^22.13.1",
+    "gifenc": "^1.0.3",
+    "pngjs": "^7.0.0",
+    "puppeteer": "^25.16.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"
